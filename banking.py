@@ -8,12 +8,12 @@ Handle banking data (checking and saving accounts) for display.
 '''
 class Banking:
     def __init__(self, querystr = None) -> None:
-        self._querystr = querystr
+        self._query_str = querystr
 
     @property
     def transactions(self):
         if not hasattr(self, '_transactions'):
-            if self._querystr:
+            if self._query_str:
                 self._transactions = load().query(self._query_str)
             else:
                 self._transactions = load()
@@ -100,7 +100,7 @@ class Banking:
                 overwrite = (results[0][-1] == datestr)
                 for rs in results:
                     if rs[0] == 'x':
-                        rs.append(datestr) if not overwrite else Pass
+                        rs.append(datestr) if not overwrite else None
                     elif rs[0] == acct:
                         if overwrite:
                             rs[-1] = bal

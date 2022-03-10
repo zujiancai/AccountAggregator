@@ -1,82 +1,81 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>{% block title %} Banking {% endblock %}</h2>
-    <br />
-    <div class="row">
-        <div class="col-md-4 mt-2">
-            <div class="card">
-                <div class="card-header">
-                    Total Balance
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">{{ "Total: ${:,.2f}".format(bkg.total_close) }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">{{ "Previous: ${:,.2f}".format(bkg.total_open) }}</h6>
-                    {% set diff_balance = bkg.total_close - bkg.total_open %}
-                    {% if diff_balance >= 0 %}
-                        {% set change_class = "text-success" %}
-                    {% else %}
-                        {% set change_class = "text-danger" %}
-                    {% endif %}
-                    <p class="card-text">
-                        Change from previous: <span class="{{ change_class }}">{{ "${0:,.2f} ({1:,.2f}%)".format(diff_balance, diff_balance/bkg.total_open*100) }}</span>
-                    </p>
-                </div>
+<h2>{% block title %} Banking {% endblock %}</h2>
+<br />
+<div class="row">
+    <div class="col-md-4 mt-2">
+        <div class="card">
+            <div class="card-header">
+                Total Balance
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ "Total: ${:,.2f}".format(bkg.total_close) }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ "Previous: ${:,.2f}".format(bkg.total_open) }}</h6>
+                {% set diff_balance = bkg.total_close - bkg.total_open %}
+                {% if diff_balance >= 0 %}
+                    {% set change_class = "text-success" %}
+                {% else %}
+                    {% set change_class = "text-danger" %}
+                {% endif %}
+                <p class="card-text">
+                    Change from previous: <span class="{{ change_class }}">{{ "${0:,.2f} ({1:,.2f}%)".format(diff_balance, diff_balance/bkg.total_open*100) }}</span>
+                </p>
             </div>
         </div>
-        <div class="col-md-4 mt-2">
-            <div class="card">
-                <div class="card-header">
-                    Total Income/Expense
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">{{ "Income:  ${:,.2f}".format(bkg.total_income) }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">{{ "Expense: ${:,.2f}".format(bkg.total_expense) }}</h6>
-                    {% set diff_amt = bkg.total_income - bkg.total_expense %}
-                    {% if diff_amt >= 0 %}
-                        {% set diff_class = "text-success" %}
-                    {% else %}
-                        {% set diff_class = "text-danger" %}
-                    {% endif %}
-                    <p class="card-text">
-                        Income over expense: <span class="{{ diff_class }}">{{ "${0:,.2f}".format(diff_amt) }}</span>
-                    </p>
-                </div>
+    </div>
+    <div class="col-md-4 mt-2">
+        <div class="card">
+            <div class="card-header">
+                Total Income/Expense
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ "Income:  ${:,.2f}".format(bkg.total_income) }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ "Expense: ${:,.2f}".format(bkg.total_expense) }}</h6>
+                {% set diff_amt = bkg.total_income - bkg.total_expense %}
+                {% if diff_amt >= 0 %}
+                    {% set diff_class = "text-success" %}
+                {% else %}
+                    {% set diff_class = "text-danger" %}
+                {% endif %}
+                <p class="card-text">
+                    Income over expense: <span class="{{ diff_class }}">{{ "${0:,.2f}".format(diff_amt) }}</span>
+                </p>
             </div>
         </div>
-        <div class="col-md-12 mt-2">
-            <div class="card mt-2">
-                <div class="card-header">
-                    Balances
-                </div>
-                <div class="card-body">
-                    <div id="balanceLines"></div>
-                </div>
+    </div>
+    <div class="col-md-12 mt-2">
+        <div class="card mt-2">
+            <div class="card-header">
+                Balances
+            </div>
+            <div class="card-body">
+                <div id="balanceLines"></div>
             </div>
         </div>
-        <div class="col-md-12 mt-2">
-            <div class="card">
-                <div class="card-header">
-                    Income & Expense
-                </div>
-                <div id="incomeExpenseBars"></div>
+    </div>
+    <div class="col-md-12 mt-2">
+        <div class="card">
+            <div class="card-header">
+                Income & Expense
             </div>
+            <div id="incomeExpenseBars"></div>
         </div>
-        <div class="col-md-6 mt-2">
-            <div class="card">
-                <div class="card-header">
-                    Income Categories
-                </div>
-                <div id="incomeCategoriesDonut"></div>
+    </div>
+    <div class="col-md-6 mt-2">
+        <div class="card">
+            <div class="card-header">
+                Income Categories
             </div>
+            <div id="incomeCategoriesDonut"></div>
         </div>
-        <div class="col-md-6 mt-2">
-            <div class="card">
-                <div class="card-header">
-                    Expense Categories
-                </div>
-                <div id="expenseCategoriesDonut"></div>
+    </div>
+    <div class="col-md-6 mt-2">
+        <div class="card">
+            <div class="card-header">
+                Expense Categories
             </div>
+            <div id="expenseCategoriesDonut"></div>
         </div>
     </div>
 </div>

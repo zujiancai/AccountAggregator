@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{% block title %} Records {% endblock %}</h2>
+<br />
+<div class="card card-body">
+    <form method="post">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-1">
+                <label for="querystr" class="form-label">Query:</label>
+            </div>
+            <div class="col-lg-4">
+                <input type="text" class="form-control" id="querystr" name="querystr" aria-describedby="querySample" value="{{ query }}">
+            </div>
+            <div class="col-lg-4">
+                <span id="querySample" class="form-text">e.g. date &gt;&#61; '2021-01-01' and date &lt; '2021-07-01'</span>
+            </div>
+        </div>
+        <div class="row g-3 mt-1 align-items-center">
+            <div class="col-lg-1">
+                <label for="sortby" class="form-label">Sort by:</label>
+            </div>
+            <div class="col-lg-4">
+                <select class="form-select" id="sortby" name="sortby" aria-label="Select column name to sort by">
+                    {% for header in cols %}
+                    {% if header == sortby %}
+                    <option value={{ header }} selected>{{ header }}</option>
+                    {% else %}
+                    <option value={{ header }}>{{ header }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-4">
+                {% if asc %}
+                <input type="checkbox" class="form-check-input" id="sortasc" name="sortasc" checked>
+                {% else %}
+                <input type="checkbox" class="form-check-input" id="sortasc" name="sortasc">
+                {% endif %}
+            <label class="form-check-label" for="sortasc"> Ascending</label>
+            </div>
+        </div>
+        <div class="row g-3 mt-1 align-items-center">
+            <div class="col-lg-1">
+                <label for="showrows" class="form-label">Show Rows:</label>
+            </div>
+            <div class="col-lg-4">
+                <select class="form-select" id="showrows" name="showrows" aria-label="Limit the row count to show">
+                    {% set showlist = [20, 50, 100, 0] %}
+                    {% for show in showlist %}
+                    {% if show == rows %}
+                    <option value={{ show }} selected>{{ 'All' if show == 0 else show }}</option>
+                    {% else %}
+                    <option value={{ show }}>{{ 'All' if show == 0 else show }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <br />
+        <button type="submit" class="btn btn-primary">Submit Query</button>
+    </form>
+</div>
+<br />
+<p class="text-muted">
+    Showing {{ showed }} results out of {{ total }} with: {{ 'Banking("{0}").sort_values(by=["{1}"], ascending={2}, ignore_index=True){3}'.format(query, sortby, asc, ('.head({0})'.format(rows) if rows > 0 else '')) | safe }} 
+</p>
+<table class="table table-bordered table-responsive-sm">
+    <thead>
+        <tr>
+            {% for header in cols %}
+            <th scope="col">{{ header }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+            {% for val in row %}
+                {% if val is number %}
+                <td>{{ '{:,.2f}'.format(val) }}</td>
+                {% else %}
+                <td>{{ val | safe }}</td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
