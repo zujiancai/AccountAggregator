@@ -49,6 +49,7 @@ class SummarizeName:
     TOTAL = '[TOTAL]'
     INCOME = '[INCOME]'
     EXPENSE = '[EXPENSE]'
+    ALL = '[ALL]'
 
 
 class AccountSettings:

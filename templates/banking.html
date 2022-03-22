@@ -4,6 +4,22 @@
 <h2>{% block title %} Banking {% endblock %}</h2>
 <br />
 <div class="row">
+    <div class="col-md-1 mt-2">
+        <label for="selectRange" class="form-label">Date Range: </label>
+    </div>
+    <div class="col-md-5 mt-2">
+        <select id="selectRange">
+            {% for rg in bkg.ranges %}
+            {% if rg == curr %}
+            <option value="{{ rg | safe }}" selected>{{ rg | safe }}</option>
+            {% else %}
+            <option value="{{ rg | safe }}">{{ rg | safe }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="row">
     <div class="col-md-4 mt-2">
         <div class="card">
             <div class="card-header">
@@ -40,6 +56,20 @@
                 {% endif %}
                 <p class="card-text">
                     Income over expense: <span class="{{ diff_class }}">{{ "${0:,.2f}".format(diff_amt) }}</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mt-2">
+        <div class="card">
+            <div class="card-header">
+                Transaction Count
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Total: {{ bkg.transactions | count }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ "Income: {0}, Expense: {1}".format(bkg.income_count, bkg.expense_count) }}</h6>
+                <p class="card-text">
+                    Internal Transfer is not counted as either income or expense.
                 </p>
             </div>
         </div>
@@ -101,7 +131,12 @@
         bindto: '#balanceLines',
         data: {
             x: 'x',
-            columns: {{ bkg.balances | dectojson | safe }}
+            columns: {{ bkg.balances | dectojson | safe }},
+            onclick: function(d, i) {
+                var dates = {{ bkg.balances[0] | dectojson | safe }};
+                var recurl = "{{ url_for('records') }}?date=" + dates[d.index + 1];
+                window.open(recurl, "_blank");
+            }
         },
         axis: {
             x: {
@@ -125,7 +160,12 @@
         data: {
             type: 'bar',
             x: 'x',
-            columns: {{ bkg.income_expense | dectojson | safe }}
+            columns: {{ bkg.income_expense | dectojson | safe }},
+            onclick: function(d, i) {
+                var dates = {{ bkg.income_expense[0] | dectojson | safe }};
+                var recurl = "{{ url_for('records') }}?date=" + dates[d.index + 1];
+                window.open(recurl, "_blank");
+            }
         },
         axis: {
             x: {
@@ -153,7 +193,11 @@
         bindto: '#incomeCategoriesDonut',
         data: {
             type: 'donut',
-            columns: {{ bkg.income_categories | dectojson | safe }}
+            columns: {{ bkg.income_categories | dectojson | safe }},
+            onclick: function(d, i) {
+                var recurl = "{{ url_for('records') }}?date={{ curr }}&cat=" + d.name + "&type=income";
+                window.open(recurl, "_blank");
+            }
         },
         donut: {
             title: 'Income Categories'
@@ -168,7 +212,11 @@
         type: 'doughnut',
         data: {
             type: 'donut',
-            columns: {{ bkg.expense_categories | dectojson | safe }}
+            columns: {{ bkg.expense_categories | dectojson | safe }},
+            onclick: function(d, i) {
+                var recurl = "{{ url_for('records') }}?date={{ curr }}&cat=" + d.name + "&type=expense";
+                window.open(recurl, "_blank");
+            }
         },
         donut: {
             title: 'Expense Categories'
@@ -177,6 +225,12 @@
             pattern: colors1
         }
     });
+
+    var selectEl = document.getElementById('selectRange');
+
+    selectEl.onchange = function() {
+        window.location = "{{ url_for('banking') }}?date=" + this.value;
+    };
 
 </script>
 {% endblock %}

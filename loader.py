@@ -1,4 +1,5 @@
-from common import ColName, CategoryName
+from datetime import datetime
+from common import ColName, CategoryName, SummarizeName
 from config import LoaderSettings, CategoryMapping, DATA_DIR, RESULT_FILE_NAME
 import os
 import pandas as pd
@@ -121,3 +122,76 @@ def resolve_internal(dry_run = False) -> pd.DataFrame:
     else:
         print('No change has been made for dry-run. Please check return for potential internal transfers.')
     return df[df[ColName.ID].isin(results)]
+
+
+'''
+Set transaction category to new value in batch. targets is a list of transaction Id to update.
+'''
+def update_category(targets: list, newCat: str) -> pd.DataFrame:
+    cats = [getattr(CategoryName, x) for x in dir(CategoryName) if not x.startswith('__')]
+    if newCat not in cats:
+        print('Unsupported category: {}'.format(newCat))
+        return None
+    df = load()
+    if df is None or len(df) == 0:
+        return None
+    df.loc[df[ColName.ID].isin(targets), ColName.CATEGORY] = newCat
+    df.to_pickle(os.path.join(DATA_DIR, RESULT_FILE_NAME))
+    print('Transactions in return have been updated with new category.')
+    return df[df[ColName.ID].isin(targets)]
+
+
+'''
+Convert range query name to dataframe query condition: 2021 -> entire calendar year of 2021; 2021Q2 -> 2021 Quarter 2; 2021-10 -> Octorber of 2021
+'''
+def range_query(query_raw: str, colname: str) -> str:
+    query_raw = query_raw.strip()
+    if query_raw == SummarizeName.ALL:
+        return None
+    if re.search('^\d{4}$', query_raw):
+        return "{0} >= '{1}-01-01' and {0} <= '{1}-12-31'".format(colname, query_raw)
+    elif re.search('^\d{4}Q[1-4]$', query_raw):
+        qdata = query_raw.split('Q')
+        qnum = int(qdata[1]) - 1
+        qtomon = [ "{0} >= '{1}-01-01' and {0} <= '{1}-03-31'",
+                   "{0} >= '{1}-04-01' and {0} <= '{1}-06-30'", 
+                   "{0} >= '{1}-07-01' and {0} <= '{1}-09-30'",
+                   "{0} >= '{1}-10-01' and {0} <= '{1}-12-31'"]
+        return qtomon[qnum].format(colname, qdata[0])
+    elif re.search('^\d{4}-(0[1-9]|1[0-2])$', query_raw):
+        mdata = query_raw.split('-')
+        myear = int(mdata[0])
+        mmonth = int(mdata[1])
+        if mmonth == 12:
+            return "{0} >= '{1}-12-01' and {0} < '{2}-01-01'".format(colname, myear, myear + 1)
+        else:
+            return "{0} >= '{1}-{2:02d}-01' and {0} < '{1}-{3:02d}-01'".format(colname, myear, mmonth, mmonth + 1)
+    elif re.search('^\d{4}-(0[1-9]|1[0-2])-[0-3][0-9]$', query_raw):
+        try:
+            datetime.strptime(query_raw, '%Y-%m-%d')
+            return("{0} == '{1}'".format(colname, query_raw))
+        except ValueError:
+            pass
+    return query_raw
+
+
+'''
+List available range queries (year, quarter, and month) between two timestamps
+'''
+def list_ranges(start_date : pd.Timestamp, end_date: pd.Timestamp) -> list:
+    results = list(reversed(range(start_date.year, end_date.year + 1)))
+    qres = []
+    mres = []
+    for yr in results:
+        startq = (end_date.month - 1) // 3 + 1 if yr == end_date.year else 4
+        endq = (start_date.month - 1) // 3 if yr == start_date.year else 0
+        for x in range(startq, endq, -1):
+            qres.append('{0}Q{1}'.format(yr, x))
+        startm = end_date.month if yr == end_date.year else 12
+        endm = start_date.month - 1 if yr == start_date.year else 0
+        for x in range(startm, endm, -1):
+            mres.append('{0}-{1:02d}'.format(yr, x))
+    results = [SummarizeName.ALL] + [str(x) for x in results]
+    results.extend(qres)
+    results.extend(mres)
+    return results

@@ -1,23 +1,34 @@
-from ast import Pass
-from unittest import result
 from common import ColName, CategoryName, SummarizeName
-from loader import load
+from loader import load, list_ranges, range_query
 
 '''
 Handle banking data (checking and saving accounts) for display.
 '''
 class Banking:
-    def __init__(self, querystr = None) -> None:
-        self._query_str = querystr
+    def __init__(self, querystr: str = None) -> None:
+        self._query_str = range_query(querystr, ColName.DATE) if querystr else None
 
     @property
     def transactions(self):
         if not hasattr(self, '_transactions'):
-            if self._query_str:
-                self._transactions = load().query(self._query_str)
-            else:
-                self._transactions = load()
+            self.load_transactions()
         return self._transactions
+
+    @property
+    def income_count(self):
+        querystr = '{0} >= 0 and {1} != "{2}"'.format(ColName.AMOUNT, ColName.CATEGORY, CategoryName.INTERNAL)
+        return len(self.transactions.query(querystr))
+
+    @property
+    def expense_count(self):
+        querystr = '{0} < 0 and {1} != "{2}"'.format(ColName.AMOUNT, ColName.CATEGORY, CategoryName.INTERNAL)
+        return len(self.transactions.query(querystr))
+
+    @property
+    def ranges(self):
+        if not hasattr(self, '_ranges'):
+            self.load_transactions()
+        return self._ranges
 
     @property
     def total_open(self):
@@ -67,11 +78,17 @@ class Banking:
             self.load_categories()
         return self._expense_categories
 
+    def load_transactions(self) -> None:
+        self._transactions = load()
+        self._ranges = list_ranges(self._transactions.iloc[0, 0], self._transactions.iloc[-1, 0])
+        if self._query_str:
+            self._transactions = self._transactions.query(self._query_str)
+
     '''
     Load balances by date and account, also aggregate the running total balances
     '''
     def load_balances(self) -> None:
-        bacols = [ColName.DATE, ColName.ACCOUNT, ColName.BALANCE]
+        bacols = [ColName.DATE, ColName.ACCOUNT, ColName.BALANCE, ColName.AMOUNT]
         if self.transactions is None or len(self.transactions) == 0:
             return
         df = self.transactions[bacols].drop_duplicates(subset=[ColName.DATE, ColName.ACCOUNT], keep='last')
@@ -86,34 +103,20 @@ class Banking:
             acct = row[ColName.ACCOUNT]
             bal = row[ColName.BALANCE]
             if not acct in open_balances:
-                open_balances[acct] = bal
-            filled = sum(1 if len(x) > 1 else 0 for x in results if x[0] != 'x' and x[0] != acct)
-            if filled < len(results) - 2: # Some account misses balance in the result
-                for rs in results:
-                    if rs[0] == acct:
-                        if len(rs) > 1:
-                            rs[-1] = bal
-                        else:
-                            rs.append(bal)
-            else: # All accounts have balance in the result
-                total_balance = 0
-                overwrite = (results[0][-1] == datestr)
-                for rs in results:
-                    if rs[0] == 'x':
-                        rs.append(datestr) if not overwrite else None
-                    elif rs[0] == acct:
-                        if overwrite:
-                            rs[-1] = bal
-                        else:
-                            rs.append(bal)
-                    elif len(rs) < len(results[0]):
-                        rs.append(rs[-1])
-                    if rs[0] != 'x':
-                        total_balance += rs[-1]
-                if overwrite:
-                    basum[-1] = total_balance
-                else:
-                    basum.append(total_balance)
+                open_balances[acct] = bal - row[ColName.AMOUNT]
+            for rs in results:
+                if rs[0] == 'x':
+                    rs.append(datestr)
+                elif rs[0] == acct:
+                    spots = len(results[0]) - len(rs)
+                    for i in range(spots - 1):
+                        rs.append(rs[-1] if len(rs) > 1 else open_balances[acct])
+                    rs.append(bal)
+                elif len(rs) > 1:
+                    rs.append(rs[-1])
+        for i in range(1, len(results[0])):
+            sumamt = sum([rs[i] for rs in results if rs[0] != 'x'])
+            basum.append(sumamt)
         if len(basum) > 1:
             self._total_open =  sum(open_balances.values())
             self._total_close = basum[-1]

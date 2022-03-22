@@ -10,7 +10,7 @@
                 <label for="querystr" class="form-label">Query:</label>
             </div>
             <div class="col-lg-4">
-                <input type="text" class="form-control" id="querystr" name="querystr" aria-describedby="querySample" value="{{ query }}">
+                <input type="text" class="form-control" id="querystr" name="querystr" aria-describedby="querySample" value="{{ query | safe }}">
             </div>
             <div class="col-lg-4">
                 <span id="querySample" class="form-text">e.g. date &gt;&#61; '2021-01-01' and date &lt; '2021-07-01'</span>
