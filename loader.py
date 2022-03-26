@@ -142,6 +142,26 @@ def update_category(targets: list, newCat: str) -> pd.DataFrame:
 
 
 '''
+Reset category for all transactions except for category listed in skip_cats, return update count. Typeically run after CategoryMapping update.
+    - WARNING: manually updated categories will be reset. The default category to leave alone is internal_transfer as in list skip_cats.
+'''
+def reset_category(skip_cats: list = [CategoryName.INTERNAL]) -> int:
+    df = load()
+    count = 0
+    if df is None or len(df) == 0:
+        return count
+    for ind in range(len(df)):
+        if df.loc[ind, ColName.CATEGORY] not in skip_cats:
+            newcat = resolve_category(df.loc[ind, ColName.DESCRIPTION])
+            if df.loc[ind, ColName.CATEGORY] != newcat:
+                df.loc[ind, ColName.CATEGORY] = newcat
+                count += 1
+    df.to_pickle(os.path.join(DATA_DIR, RESULT_FILE_NAME))
+    print('Reset category for transactions except for: {}'.format(', '.join(skip_cats)))
+    return count
+
+
+'''
 Convert range query name to dataframe query condition: 2021 -> entire calendar year of 2021; 2021Q2 -> 2021 Quarter 2; 2021-10 -> Octorber of 2021
 '''
 def range_query(query_raw: str, colname: str) -> str:

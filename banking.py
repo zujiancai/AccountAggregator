@@ -15,13 +15,12 @@ class Banking:
         return self._transactions
 
     @property
-    def income_count(self):
-        querystr = '{0} >= 0 and {1} != "{2}"'.format(ColName.AMOUNT, ColName.CATEGORY, CategoryName.INTERNAL)
-        return len(self.transactions.query(querystr))
+    def accounts(self):
+        return self.transactions[ColName.ACCOUNT].drop_duplicates().tolist()
 
     @property
-    def expense_count(self):
-        querystr = '{0} < 0 and {1} != "{2}"'.format(ColName.AMOUNT, ColName.CATEGORY, CategoryName.INTERNAL)
+    def internal_transfer_count(self):
+        querystr = '{0} == "{1}"'.format(ColName.CATEGORY, CategoryName.INTERNAL)
         return len(self.transactions.query(querystr))
 
     @property
@@ -92,11 +91,11 @@ class Banking:
         if self.transactions is None or len(self.transactions) == 0:
             return
         df = self.transactions[bacols].drop_duplicates(subset=[ColName.DATE, ColName.ACCOUNT], keep='last')
-        basum = [SummarizeName.TOTAL]
+        basum = [SummarizeName.TOTAL] # row for total balances of all accounts
         results = [] # Expected output: [['x', '2021-10-01', '2021-10-08', '2021-11-20'], ['account1', 100, 120, 180], ['account2', 30, 25, 33]]
         results.append(['x'])
-        open_balances = {} # Track open balances for all accounts
-        for acct in df[ColName.ACCOUNT].drop_duplicates().tolist():
+        open_balances = {} # Track open balances for each account
+        for acct in self.accounts:
             results.append([acct])
         for idx, row in df.iterrows():
             datestr = row[ColName.DATE].strftime('%Y-%m-%d')
@@ -104,16 +103,19 @@ class Banking:
             bal = row[ColName.BALANCE]
             if not acct in open_balances:
                 open_balances[acct] = bal - row[ColName.AMOUNT]
-            for rs in results:
-                if rs[0] == 'x':
-                    rs.append(datestr)
-                elif rs[0] == acct:
-                    spots = len(results[0]) - len(rs)
-                    for i in range(spots - 1):
-                        rs.append(rs[-1] if len(rs) > 1 else open_balances[acct])
-                    rs.append(bal)
-                elif len(rs) > 1:
-                    rs.append(rs[-1])
+            if results[0][-1] != datestr: # Don't introduce duplicate dates
+                results[0].append(datestr)
+            for ri in range(1, len(results)):
+                if results[ri][0] == acct:
+                    spots = len(results[0]) - len(results[ri])
+                    if spots > 0:
+                        for i in range(spots - 1):
+                            results[ri].append(results[ri][-1] if len(results[ri]) > 1 else open_balances[acct])
+                        results[ri].append(bal)
+                    else:
+                        results[ri][-1] = bal
+                elif len(results[ri]) > 1 and len(results[0]) > len(results[ri]):
+                    results[ri].append(results[ri][-1])
         for i in range(1, len(results[0])):
             sumamt = sum([rs[i] for rs in results if rs[0] != 'x'])
             basum.append(sumamt)

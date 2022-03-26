@@ -66,10 +66,10 @@
                 Transaction Count
             </div>
             <div class="card-body">
-                <h5 class="card-title">Total: {{ bkg.transactions | count }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{ "Income: {0}, Expense: {1}".format(bkg.income_count, bkg.expense_count) }}</h6>
+                <h5 class="card-title">Total: {{ bkg.transactions | count }} transactions</h5>
+                <h6 class="card-subtitle mb-2 text-muted">From {{ bkg.accounts | count }} different accounts</h6>
                 <p class="card-text">
-                    Internal Transfer is not counted as either income or expense.
+                    There are {{ bkg.internal_transfer_count }} internal transfers that are not counted as either income or expense.
                 </p>
             </div>
         </div>

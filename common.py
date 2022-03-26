@@ -42,6 +42,7 @@ class CategoryName:
     CARE_SERVICE = 'care_service'
     TAX_REFUND = 'tax_refund'
     INTERNAL = 'internal_transfer'
+    TRANSPORTATION = 'transportation'
     OTHER = 'other'
 
 

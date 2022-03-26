@@ -46,6 +46,6 @@ CategoryMapping = [
     ('IRS TREAS', CategoryName.TAX_REFUND),
     ('MORTGAGE', CategoryName.MORTGAGE),
     ('PUGET SOUND ENER|Bills & Utilities', CategoryName.UTILITY),
-    ('INTEREST|^CREDIT$|^CREDIT DIVIDEND$', CategoryName.INTEREST),
+    ('INTEREST|Interest|^CREDIT$|^Credit Dividend$', CategoryName.INTEREST),
     ('KIDDIE ACADEMY', CategoryName.CARE_SERVICE)
 ]
